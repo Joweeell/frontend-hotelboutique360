@@ -25,6 +25,10 @@ export const App: React.FC = () => {
     ? getUserRolesFromToken(auth.user?.id_token)
     : ['GUEST'];
 
+
+    /*ver el frontend como quedo*/
+  /*const userRoles: UserRole[] = ['ADMIN'];*/
+
   const checkHealth = async () => {
     setHealthLoading(true);
     setHealthResponse('');

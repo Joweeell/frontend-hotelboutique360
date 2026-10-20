@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { AuthProvider } from 'react-oidc-context';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import { cognitoAuthConfig } from './config/authConfig';
 import App from './App';
 import './index.css';

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { isAxiosError } from 'axios';
 import { useAuth } from 'react-oidc-context';
+import { Alert, Button, Card, Container, Spinner } from 'react-bootstrap';
 import axiosInstance from './api/axiosInstance';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { RoleGuard } from './components/RoleGuard';
 import { getUserRolesFromToken } from './utils/authUtils';
 import type { UserRole } from './types';
-import { Menu } from 'lucide-react';
 
 import { DashboardView } from './views/DashboardView';
 import { RoomsView } from './views/RoomsView';
@@ -62,46 +62,50 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#fafafa' }}>
-      
-      <Navbar userRoles={userRoles} />
+    <div className="d-flex flex-column min-vh-100">
+      <Navbar userRoles={userRoles} onToggleSidebar={() => setIsSidebarOpen(true)} />
 
-      <button
-        onClick={() => setIsSidebarOpen(true)}
-        aria-label="Abrir menú"
-        style={{ position: 'fixed', top: '76px', left: '20px', zIndex: 20 }}
-      >
-        <Menu size={22} />
-      </button>
+      <div className="d-flex flex-grow-1">
+        <Sidebar
+          currentView={currentView}
+          setCurrentView={setCurrentView}
+          userRoles={userRoles}
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
+        />
 
-      {/* SIDEBAR OCULTO */}
-      <Sidebar 
-        currentView={currentView} 
-        setCurrentView={setCurrentView} 
-        userRoles={userRoles} 
-        isOpen={isSidebarOpen}          // Pasamos el estado
-        setIsOpen={setIsSidebarOpen}    // Pasamos la función para cerrar
-      />
+        <main className="hb-main flex-grow-1 py-4">
+          <Container fluid="xl">
+            {auth.isLoading && (
+              <Alert variant="info" className="d-flex align-items-center gap-2">
+                <Spinner animation="border" size="sm" /> Cargando sesión de Cognito...
+              </Alert>
+            )}
+            {auth.error && <Alert variant="danger">Error de Cognito: {auth.error.message}</Alert>}
 
-      {/* CONTENIDO PRINCIPAL */}
-      <main style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {auth.isLoading && <p>Cargando sesión de Cognito...</p>}
-          {auth.error && <p>Error de Cognito: {auth.error.message}</p>}
-          {auth.isAuthenticated && (
-            <section className="card" style={{ marginBottom: '20px' }}>
-              <h2>Prueba de conexión</h2>
-              <p>Sesión activa: {auth.user?.profile.email ?? 'usuario autenticado'}</p>
-              <button className="btn-primary" onClick={() => void checkHealth()} disabled={healthLoading}>
-                {healthLoading ? 'Consultando...' : 'Consultar API health'}
-              </button>
-              {healthResponse && <pre style={{ whiteSpace: 'pre-wrap' }}>{healthResponse}</pre>}
-            </section>
-          )}
-          {renderView()}
-        </div>
-      </main>
+            {auth.isAuthenticated && (
+              <Card className="mb-4">
+                <Card.Header className="hb-serif fs-5">Prueba de conexión</Card.Header>
+                <Card.Body>
+                  <Card.Text>
+                    Sesión activa: {auth.user?.profile.email ?? 'usuario autenticado'}
+                  </Card.Text>
+                  <Button variant="primary" onClick={() => void checkHealth()} disabled={healthLoading}>
+                    {healthLoading ? 'Consultando...' : 'Consultar API health'}
+                  </Button>
+                  {healthResponse && (
+                    <pre className="bg-light border rounded p-3 mt-3 mb-0 small" style={{ whiteSpace: 'pre-wrap' }}>
+                      {healthResponse}
+                    </pre>
+                  )}
+                </Card.Body>
+              </Card>
+            )}
 
+            {renderView()}
+          </Container>
+        </main>
+      </div>
     </div>
   );
 };

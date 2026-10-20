@@ -1,57 +1,67 @@
 import React from 'react';
 import { useAuth } from 'react-oidc-context';
-import { LogIn, LogOut, Hotel, User } from 'lucide-react';
+import { Badge, Button, Container, Navbar as BsNavbar } from 'react-bootstrap';
+import { LogIn, LogOut, Hotel, Menu, User } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface NavbarProps {
   userRoles: UserRole[];
+  onToggleSidebar: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ userRoles }) => {
+export const Navbar: React.FC<NavbarProps> = ({ userRoles, onToggleSidebar }) => {
   const auth = useAuth();
 
   return (
-    <header style={{
-      height: '64px',
-      backgroundColor: '#2b153d',
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 24px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <Hotel color="#bd06d9" size={28} />
-        <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-          HOTEL BOUTIQUE <span style={{ color: '#bd06d9' }}>360</span>
-        </span>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {auth.isAuthenticated ? (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <User size={18} color="#d97706" />
-              <span style={{ fontSize: '0.9rem' }}>{auth.user?.profile.email}</span>
-              <span className="badge badge-warning">{userRoles[0] || 'HUESPED'}</span>
-            </div>
-            <button 
-              onClick={() => void auth.removeUser()} 
-              style={{ background: 'transparent', border: '1px solid #d97706', color: 'white', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <LogOut size={16} /> Salir
-            </button>
-          </>
-        ) : (
-          <button 
-            onClick={() => void auth.signinRedirect()} 
-            className="btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+    <BsNavbar variant="dark" sticky="top" className="hb-navbar">
+      <Container fluid className="px-3 px-lg-4">
+        <div className="d-flex align-items-center gap-2">
+          <Button
+            variant="link"
+            className="text-white p-0 me-1 d-lg-none"
+            onClick={onToggleSidebar}
+            aria-label="Abrir menú"
           >
-            <LogIn size={18} /> Iniciar Sesión (Cognito)
-          </button>
-        )}
-      </div>
-    </header>
+            <Menu size={24} />
+          </Button>
+          <BsNavbar.Brand className="d-flex align-items-center gap-2 m-0">
+            <Hotel size={24} className="hb-accent" />
+            <span>
+              HOTEL BOUTIQUE <span className="hb-accent">360</span>
+            </span>
+          </BsNavbar.Brand>
+        </div>
+
+        <div className="d-flex align-items-center gap-3">
+          {auth.isAuthenticated ? (
+            <>
+              <div className="d-none d-md-flex align-items-center gap-2 text-white">
+                <User size={18} className="hb-accent" />
+                <small>{auth.user?.profile.email}</small>
+                <Badge bg="primary">{userRoles[0] || 'HUESPED'}</Badge>
+              </div>
+              <Button
+                variant="outline-light"
+                size="sm"
+                className="d-flex align-items-center gap-2"
+                onClick={() => void auth.removeUser()}
+              >
+                <LogOut size={16} /> Salir
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="primary"
+              size="sm"
+              className="d-flex align-items-center gap-2"
+              onClick={() => void auth.signinRedirect()}
+            >
+              <LogIn size={18} />
+              <span className="d-none d-sm-inline">Iniciar sesión</span>
+            </Button>
+          )}
+        </div>
+      </Container>
+    </BsNavbar>
   );
 };

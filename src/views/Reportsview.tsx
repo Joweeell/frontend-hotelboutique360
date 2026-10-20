@@ -1,12 +1,13 @@
 import React from 'react';
+import { Card, Col, ProgressBar, Row, Table } from 'react-bootstrap';
 
 export const ReportsView: React.FC = () => {
   // Mock de datos para el reporte
   const kpiData = {
     totalRevenue: 45250,
     occupancyRate: 85,
-    adr: 120, // Average Daily Rate (Tarifa Media Diaria)
-    revPar: 102, // Revenue Per Available Room (Ingreso por Habitación Disponible)
+    adr: 120, // Average Daily Rate (tarifa media diaria)
+    revPar: 102, // Revenue Per Available Room (ingreso por habitación disponible)
   };
 
   const revenueByRoomType = [
@@ -18,92 +19,105 @@ export const ReportsView: React.FC = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ color: '#3b0764', margin: 0 }}>Reportes y Analíticas</h2>
-        <p style={{ color: '#6b21a8', marginTop: '5px' }}>Indicadores clave de rendimiento (KPIs) del mes actual.</p>
+      <div className="mb-4">
+        <h2 className="mb-1">Reportes y Analíticas</h2>
+        <p className="text-secondary mb-0">Indicadores clave de rendimiento (KPIs) del mes actual.</p>
       </div>
 
-      {/* Tarjetas Superiores de KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-        <div className="card" style={{ borderLeft: '4px solid #8b5cf6' }}>
-          <h4 style={{ color: '#6b21a8', margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Ingresos Totales</h4>
-          <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3b0764', margin: '0' }}>
-            ${kpiData.totalRevenue.toLocaleString()} <span style={{ fontSize: '1rem' }}>USD</span>
-          </p>
-          <p style={{ color: '#10b981', fontSize: '0.85rem', margin: '5px 0 0 0', fontWeight: 'bold' }}>↑ +12.5% vs mes anterior</p>
-        </div>
+      {/* Tarjetas superiores de KPIs */}
+      <Row xs={1} sm={2} xl={4} className="g-3 mb-4">
+        <Col>
+          <Card className="hb-kpi-card h-100">
+            <Card.Body>
+              <div className="hb-kpi-label">Ingresos totales</div>
+              <div className="hb-kpi-value mt-2">
+                ${kpiData.totalRevenue.toLocaleString()} <small className="fs-6 text-secondary">USD</small>
+              </div>
+              <div className="text-success small fw-semibold mt-2">↑ +12.5% vs mes anterior</div>
+            </Card.Body>
+          </Card>
+        </Col>
 
-        <div className="card" style={{ borderLeft: '4px solid #3b0764' }}>
-          <h4 style={{ color: '#6b21a8', margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Ocupación</h4>
-          <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3b0764', margin: '0' }}>{kpiData.occupancyRate}%</p>
-          
-          {/* Barra de progreso CSS */}
-          <div style={{ width: '100%', backgroundColor: '#f3e8ff', height: '8px', borderRadius: '4px', marginTop: '10px', overflow: 'hidden' }}>
-            <div style={{ width: `${kpiData.occupancyRate}%`, backgroundColor: '#3b0764', height: '100%' }}></div>
-          </div>
-        </div>
+        <Col>
+          <Card className="hb-kpi-card h-100">
+            <Card.Body>
+              <div className="hb-kpi-label">Ocupación</div>
+              <div className="hb-kpi-value mt-2">{kpiData.occupancyRate}%</div>
+              <ProgressBar now={kpiData.occupancyRate} variant="primary" className="mt-3" style={{ height: 8 }} />
+            </Card.Body>
+          </Card>
+        </Col>
 
-        <div className="card" style={{ borderLeft: '4px solid #8b5cf6' }}>
-          <h4 style={{ color: '#6b21a8', margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>ADR (Tarifa Media)</h4>
-          <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3b0764', margin: '0' }}>
-            ${kpiData.adr} <span style={{ fontSize: '1rem' }}>USD</span>
-          </p>
-        </div>
+        <Col>
+          <Card className="hb-kpi-card h-100">
+            <Card.Body>
+              <div className="hb-kpi-label">ADR (tarifa media)</div>
+              <div className="hb-kpi-value mt-2">
+                ${kpiData.adr} <small className="fs-6 text-secondary">USD</small>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
 
-        <div className="card" style={{ borderLeft: '4px solid #3b0764' }}>
-          <h4 style={{ color: '#6b21a8', margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>RevPAR</h4>
-          <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3b0764', margin: '0' }}>
-            ${kpiData.revPar} <span style={{ fontSize: '1rem' }}>USD</span>
-          </p>
-        </div>
-      </div>
+        <Col>
+          <Card className="hb-kpi-card h-100">
+            <Card.Body>
+              <div className="hb-kpi-label">RevPAR</div>
+              <div className="hb-kpi-value mt-2">
+                ${kpiData.revPar} <small className="fs-6 text-secondary">USD</small>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
-        {/* Gráfico de barras simulado (Ingresos por tipo) */}
-        <div className="card">
-          <h3 style={{ color: '#3b0764', marginTop: 0, marginBottom: '20px' }}>Ingresos por Tipo de Habitación</h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {revenueByRoomType.map((item) => {
-              const percentage = (item.revenue / kpiData.totalRevenue) * 100;
-              return (
-                <div key={item.type}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.9rem', color: '#3b0764', fontWeight: 'bold' }}>
-                    <span>{item.type}</span>
-                    <span>${item.revenue.toLocaleString()} USD</span>
+      <Row className="g-4">
+        {/* Ingresos por tipo de habitación */}
+        <Col xs={12} lg={6}>
+          <Card className="h-100">
+            <Card.Header className="hb-serif fs-5">Ingresos por tipo de habitación</Card.Header>
+            <Card.Body className="d-flex flex-column gap-3">
+              {revenueByRoomType.map((item) => {
+                const percentage = (item.revenue / kpiData.totalRevenue) * 100;
+                return (
+                  <div key={item.type}>
+                    <div className="d-flex justify-content-between small fw-semibold mb-1">
+                      <span>{item.type}</span>
+                      <span>${item.revenue.toLocaleString()} USD</span>
+                    </div>
+                    <ProgressBar now={percentage} variant="primary" style={{ height: 12 }} />
                   </div>
-                  <div style={{ width: '100%', backgroundColor: '#f3e8ff', height: '12px', borderRadius: '6px', overflow: 'hidden' }}>
-                    <div style={{ width: `${percentage}%`, backgroundColor: '#8b5cf6', height: '100%', transition: 'width 1s ease-in-out' }}></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                );
+              })}
+            </Card.Body>
+          </Card>
+        </Col>
 
-        {/* Tabla de Desglose */}
-        <div className="card">
-          <h3 style={{ color: '#3b0764', marginTop: 0, marginBottom: '20px' }}>Desglose de Reservas</h3>
-          <table className="table-custom">
-            <thead>
-              <tr>
-                <th>Categoría</th>
-                <th style={{ textAlign: 'center' }}>Total Reservas</th>
-                <th style={{ textAlign: 'right' }}>Ingreso Bruto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {revenueByRoomType.map((item) => (
-                <tr key={`table-${item.type}`}>
-                  <td style={{ fontWeight: 'bold', color: '#6b21a8' }}>{item.type}</td>
-                  <td style={{ textAlign: 'center' }}>{item.bookings}</td>
-                  <td style={{ textAlign: 'right' }}>${item.revenue.toLocaleString()}</td>
+        {/* Desglose de reservas */}
+        <Col xs={12} lg={6}>
+          <Card className="h-100">
+            <Card.Header className="hb-serif fs-5">Desglose de reservas</Card.Header>
+            <Table responsive hover className="hb-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Categoría</th>
+                  <th className="text-center">Total reservas</th>
+                  <th className="text-end">Ingreso bruto</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {revenueByRoomType.map((item) => (
+                  <tr key={`table-${item.type}`}>
+                    <td className="fw-semibold">{item.type}</td>
+                    <td className="text-center">{item.bookings}</td>
+                    <td className="text-end">${item.revenue.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };

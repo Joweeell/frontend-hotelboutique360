@@ -1,11 +1,21 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { isAxiosError } from 'axios';
+import { Alert, Badge, Button, Card, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import axiosInstance from '../api/axiosInstance';
 import type { Room, UserRole } from '../types';
 
 interface RoomsProps {
   userRoles: UserRole[];
 }
+
+const PLACEHOLDER_IMAGE =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">' +
+      '<rect width="100%" height="100%" fill="#efe7da"/>' +
+      '<text x="50%" y="50%" fill="#7a6f66" font-family="sans-serif" font-size="24" ' +
+      'text-anchor="middle" dominant-baseline="middle">Sin imagen</text></svg>'
+  );
 
 export const RoomsView: React.FC<RoomsProps> = ({ userRoles }) => {
   const isAdmin = userRoles.includes('ADMIN');
@@ -37,15 +47,16 @@ export const RoomsView: React.FC<RoomsProps> = ({ userRoles }) => {
     void loadRooms();
   }, []);
 
-  // Estados para el Modal y el Formulario
+  // Estados para el modal y el formulario
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Room>>({});
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
 
   const openModal = (room?: Room) => {
     if (room) {
-      setFormData(room); // Modo Edición
+      setFormData(room); // Modo edición
     } else {
-      setFormData({ isAvailable: true, roomType: 'SINGLE' }); // Modo Creación
+      setFormData({ isAvailable: true, roomType: 'SINGLE' }); // Modo creación
     }
     setIsModalOpen(true);
   };
@@ -58,11 +69,14 @@ export const RoomsView: React.FC<RoomsProps> = ({ userRoles }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const isCheckbox = type === 'checkbox';
-    
+
     setFormData((prev) => ({
       ...prev,
-      [name]: isCheckbox ? (e.target as HTMLInputElement).checked : 
-               (name === 'pricePerNight' ? parseFloat(value) : value)
+      [name]: isCheckbox
+        ? (e.target as HTMLInputElement).checked
+        : name === 'pricePerNight'
+          ? value === '' ? undefined : parseFloat(value)
+          : value,
     }));
   };
 
@@ -83,7 +97,7 @@ export const RoomsView: React.FC<RoomsProps> = ({ userRoles }) => {
     try {
       if (formData.id) {
         const response = await axiosInstance.put<Room>(`/api/v1/rooms/${formData.id}`, request);
-        setRooms((previous) => previous.map((room) => room.id === response.data.id ? response.data : room));
+        setRooms((previous) => previous.map((room) => (room.id === response.data.id ? response.data : room)));
       } else {
         const response = await axiosInstance.post<Room>('/api/v1/rooms', request);
         setRooms((previous) => [...previous, response.data]);
@@ -96,178 +110,206 @@ export const RoomsView: React.FC<RoomsProps> = ({ userRoles }) => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta habitación?')) {
-      setErrorMessage('');
-      try {
-        await axiosInstance.delete(`/api/v1/rooms/${id}`);
-        setRooms((previous) => previous.filter((room) => room.id !== id));
-      } catch (error) {
-        setErrorMessage(getErrorMessage(error));
-      }
+  const confirmDelete = async () => {
+    if (!roomToDelete) return;
+    const { id } = roomToDelete;
+    setRoomToDelete(null);
+    setErrorMessage('');
+    try {
+      await axiosInstance.delete(`/api/v1/rooms/${id}`);
+      setRooms((previous) => previous.filter((room) => room.id !== id));
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
     }
   };
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ color: '#3b0764' }}>Catálogo de Habitaciones</h2>
-        
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h2 className="mb-0">Catálogo de Habitaciones</h2>
         {isAdmin && (
-          <button className="btn-primary" onClick={() => openModal()}>+ Nueva Habitación</button>
+          <Button variant="primary" onClick={() => openModal()}>
+            + Nueva habitación
+          </Button>
         )}
       </div>
 
-      {errorMessage && <p role="alert" style={{ color: '#b91c1c' }}>{errorMessage}</p>}
-      {isLoading && <p>Cargando habitaciones...</p>}
+      {errorMessage && (
+        <Alert variant="danger" dismissible onClose={() => setErrorMessage('')}>
+          {errorMessage}
+        </Alert>
+      )}
 
-      {/* Grid de Habitaciones */}
-      {!isLoading && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {rooms.map((room) => (
-            <div key={room.id} className="card" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <img 
-                src={room.imageUrl || 'https://via.placeholder.com/300x200?text=Sin+Imagen'} 
-                alt={`Habitación ${room.roomNumber}`} 
-                style={{ width: '100%', height: '200px', objectFit: 'cover' }}
-              />
-              <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: '0', color: '#3b0764' }}>Hab. {room.roomNumber}</h3>
-                  <span className={`badge ${room.isAvailable ? 'badge-success' : 'badge-warning'}`}>
-                    {room.isAvailable ? 'Disponible' : 'Ocupada'}
-                  </span>
-                </div>
-                <p style={{ color: '#6b21a8', margin: '10px 0' }}>Tipo: <strong>{room.roomType}</strong></p>
-                <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#8b5cf6', margin: '0' }}>
-                  \${room.pricePerNight} <span style={{ fontSize: '0.85rem', fontWeight: 'normal' }}>USD / noche</span>
-                </p>
-                
-                <div style={{ marginTop: 'auto', paddingTop: '20px', display: 'flex', gap: '10px' }}>
-                  {isAdmin ? (
-                    <>
-                      <button className="btn-secondary" style={{ flex: 1 }} onClick={() => openModal(room)}>Editar</button>
-                      <button 
-                        onClick={() => handleDelete(room.id)}
-                        style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                      >
-                        Eliminar
-                      </button>
-                    </>
-                  ) : (
-                    <button className="btn-primary" style={{ flex: 1 }} disabled={!room.isAvailable}>
-                      {room.isAvailable ? 'Reservar Ahora' : 'No Disponible'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+      {isLoading && (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="text-secondary mt-2 mb-0">Cargando habitaciones...</p>
         </div>
+      )}
+
+      {!isLoading && rooms.length === 0 && !errorMessage && (
+        <Alert variant="secondary">No hay habitaciones registradas todavía.</Alert>
+      )}
+
+      {/* Grid de habitaciones */}
+      {!isLoading && (
+        <Row xs={1} md={2} xl={3} className="g-4">
+          {rooms.map((room) => (
+            <Col key={room.id}>
+              <Card className="h-100 overflow-hidden">
+                <Card.Img
+                  variant="top"
+                  className="hb-room-img"
+                  src={room.imageUrl || PLACEHOLDER_IMAGE}
+                  alt={`Habitación ${room.roomNumber}`}
+                  onError={(e) => {
+                    e.currentTarget.src = PLACEHOLDER_IMAGE;
+                  }}
+                />
+                <Card.Body className="d-flex flex-column">
+                  <div className="d-flex justify-content-between align-items-start gap-2">
+                    <Card.Title className="hb-serif mb-0">Hab. {room.roomNumber}</Card.Title>
+                    <Badge bg={room.isAvailable ? 'success' : 'warning'} text={room.isAvailable ? undefined : 'dark'}>
+                      {room.isAvailable ? 'Disponible' : 'Ocupada'}
+                    </Badge>
+                  </div>
+                  <Card.Subtitle className="text-secondary mt-2">
+                    Tipo: <strong>{room.roomType}</strong>
+                  </Card.Subtitle>
+                  {room.description && <Card.Text className="small mt-2 mb-0">{room.description}</Card.Text>}
+                  <p className="fs-4 fw-semibold mt-3 mb-0 hb-accent">
+                    ${room.pricePerNight} <small className="fs-6 fw-normal text-secondary">USD / noche</small>
+                  </p>
+
+                  <div className="d-flex gap-2 mt-auto pt-3">
+                    {isAdmin ? (
+                      <>
+                        <Button variant="outline-primary" className="flex-fill" onClick={() => openModal(room)}>
+                          Editar
+                        </Button>
+                        <Button variant="danger" className="flex-fill" onClick={() => setRoomToDelete(room)}>
+                          Eliminar
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="primary" className="flex-fill" disabled={!room.isAvailable}>
+                        {room.isAvailable ? 'Reservar ahora' : 'No disponible'}
+                      </Button>
+                    )}
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
       )}
 
       {/* Modal CRUD */}
-      {isModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          backgroundColor: 'rgba(59, 7, 100, 0.4)', backdropFilter: 'blur(4px)',
-          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999
-        }}>
-          <div className="card" style={{ width: '100%', maxWidth: '450px', padding: '30px' }}>
-            <h3 style={{ color: '#3b0764', marginTop: 0 }}>
-              {formData.id ? 'Editar Habitación' : 'Nueva Habitación'}
-            </h3>
-            
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', color: '#6b21a8', fontWeight: 'bold' }}>N° de Habitación</label>
-                <input 
-                  required 
-                  type="text" 
-                  name="roomNumber" 
-                  value={formData.roomNumber || ''} 
-                  onChange={handleChange} 
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #f3e8ff', boxSizing: 'border-box' }} 
-                />
-              </div>
-              
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', color: '#6b21a8', fontWeight: 'bold' }}>Tipo</label>
-                <select 
-                  name="roomType" 
-                  value={formData.roomType || 'SINGLE'} 
-                  onChange={handleChange}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #f3e8ff' }}
-                >
-                  <option value="SINGLE">Single</option>
-                  <option value="DOUBLE">Double</option>
-                  <option value="SUITE">Suite</option>
-                  <option value="PRESIDENCIAL">Presidencial</option>
-                </select>
-              </div>
+      <Modal show={isModalOpen} onHide={closeModal} centered>
+        <Form onSubmit={(e) => void handleSave(e)}>
+          <Modal.Header closeButton>
+            <Modal.Title className="hb-serif">
+              {formData.id ? 'Editar habitación' : 'Nueva habitación'}
+            </Modal.Title>
+          </Modal.Header>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', color: '#6b21a8', fontWeight: 'bold' }}>Precio por Noche (USD)</label>
-                <input 
-                  required 
-                  type="number" 
-                  min="0" 
-                  step="0.01" 
-                  name="pricePerNight" 
-                  value={formData.pricePerNight || ''} 
-                  onChange={handleChange}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #f3e8ff', boxSizing: 'border-box' }} 
-                />
-              </div>
+          <Modal.Body className="d-flex flex-column gap-3">
+            <Form.Group controlId="roomNumber">
+              <Form.Label>N° de habitación</Form.Label>
+              <Form.Control
+                required
+                type="text"
+                name="roomNumber"
+                value={formData.roomNumber ?? ''}
+                onChange={handleChange}
+              />
+            </Form.Group>
 
-              <div>
-                <label htmlFor="description" style={{ display: 'block', marginBottom: '5px', color: '#6b21a8', fontWeight: 'bold' }}>Descripción</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description || ''}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Describe la habitación, sus servicios o características"
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #f3e8ff', boxSizing: 'border-box', resize: 'vertical' }}
-                />
-              </div>
+            <Form.Group controlId="roomType">
+              <Form.Label>Tipo</Form.Label>
+              <Form.Select name="roomType" value={formData.roomType ?? 'SINGLE'} onChange={handleChange}>
+                <option value="SINGLE">Single</option>
+                <option value="DOUBLE">Double</option>
+                <option value="SUITE">Suite</option>
+                <option value="PRESIDENCIAL">Presidencial</option>
+              </Form.Select>
+            </Form.Group>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', color: '#6b21a8', fontWeight: 'bold' }}>URL de la Imagen</label>
-                <input 
-                  type="url" 
-                  name="imageUrl" 
-                  value={formData.imageUrl || ''} 
-                  onChange={handleChange} 
-                  placeholder="https://..."
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #f3e8ff', boxSizing: 'border-box' }} 
-                />
-              </div>
+            <Form.Group controlId="pricePerNight">
+              <Form.Label>Precio por noche (USD)</Form.Label>
+              <Form.Control
+                required
+                type="number"
+                min="0"
+                step="0.01"
+                name="pricePerNight"
+                value={formData.pricePerNight ?? ''}
+                onChange={handleChange}
+              />
+            </Form.Group>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  name="isAvailable" 
-                  checked={formData.isAvailable || false} 
-                  onChange={handleChange} 
-                  id="isAvailable" 
-                />
-                <label htmlFor="isAvailable" style={{ color: '#6b21a8', cursor: 'pointer' }}>Marcar como Disponible</label>
-              </div>
+            <Form.Group controlId="description">
+              <Form.Label>Descripción</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="description"
+                value={formData.description ?? ''}
+                onChange={handleChange}
+                placeholder="Describe la habitación, sus servicios o características"
+              />
+            </Form.Group>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button type="button" onClick={closeModal} style={{ flex: 1, padding: '10px', backgroundColor: 'transparent', border: '1px solid #6b21a8', color: '#6b21a8', borderRadius: '8px', cursor: 'pointer' }}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={isSaving}>
-                  {isSaving ? 'Guardando...' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <Form.Group controlId="imageUrl">
+              <Form.Label>URL de la imagen</Form.Label>
+              <Form.Control
+                type="url"
+                name="imageUrl"
+                value={formData.imageUrl ?? ''}
+                onChange={handleChange}
+                placeholder="https://..."
+              />
+            </Form.Group>
+
+            <Form.Check
+              type="switch"
+              id="isAvailable"
+              name="isAvailable"
+              label="Marcar como disponible"
+              checked={formData.isAvailable ?? false}
+              onChange={handleChange}
+            />
+          </Modal.Body>
+
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={closeModal}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="primary" disabled={isSaving}>
+              {isSaving ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Confirmación de eliminación */}
+      <Modal show={roomToDelete !== null} onHide={() => setRoomToDelete(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="hb-serif">Eliminar habitación</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          ¿Estás seguro de que deseas eliminar la habitación <strong>{roomToDelete?.roomNumber}</strong>? Esta acción no se
+          puede deshacer.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setRoomToDelete(null)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={() => void confirmDelete()}>
+            Eliminar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

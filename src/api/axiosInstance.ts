@@ -1,9 +1,10 @@
 import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
-import { API_GATEWAY_URL } from '../config/authConfig';
+import { API_BASE } from '../config/authConfig';
 
 const axiosInstance = axios.create({
-  baseURL: API_GATEWAY_URL,
+  // Base vacía = mismo origen (proxy de Vite en local, CloudFront en AWS).
+  baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },

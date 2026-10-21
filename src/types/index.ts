@@ -19,12 +19,50 @@ export interface RoomRequest {
   imageUrl?: string;
 }
 
+export type ReservationStatus =
+  | 'PENDIENTE'
+  | 'CONFIRMADA'
+  | 'CHECKED_IN'
+  | 'CHECKED_OUT'
+  | 'CANCELADA';
+
+/**
+ * Reserva de habitación. La devuelve el BFF (que a su vez la pide a la Lambda
+ * 'reservation-query'). Los campos opcionales vienen null cuando el dato no aplica.
+ */
 export interface Reservation {
   id: string;
   guestName: string;
+  guestEmail?: string | null;
+  roomNumber: string;
+  roomType?: string | null;
+  checkIn: string;
+  checkOut?: string | null;
+  guests?: number | null;
+  totalAmount?: number | null;
+  status: ReservationStatus;
+  notes?: string | null;
+  requestedAt?: string | null;
+  updatedAt?: string | null;
+}
+
+/** Cuerpo de POST /api/v1/reservations. */
+export interface ReservationCreateRequest {
+  guestName: string;
+  guestEmail?: string;
   roomNumber: string;
   checkIn: string;
-  status: 'PENDIENTE' | 'CONFIRMADA' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELADA';
+  checkOut?: string;
+  guests?: number;
+  notes?: string;
+}
+
+/** Respuesta de PATCH /api/v1/reservations/{id}/status (202 Accepted). */
+export interface ReservationStatusChange {
+  id: string;
+  status: ReservationStatus;
+  message: string;
+  changedAt: string;
 }
 
 export interface CognitoJwtPayload {
